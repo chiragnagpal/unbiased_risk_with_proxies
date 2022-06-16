@@ -53,10 +53,16 @@ class CensoredSurvivalData:
 		censoring_dist_min_scale = kwargs.get('censoring_dist_min_scale', censoring_dist_scale)
 		censoring_dist_maj_scale = kwargs.get('censoring_dist_maj_scale', censoring_dist_scale)
 
+		censoring_dist_loc = kwargs.get('censoring_dist_loc', 0)
+		censoring_dist_min_loc = kwargs.get('censoring_dist_min_loc', censoring_dist_loc) 
+		censoring_dist_maj_loc = kwargs.get('censoring_dist_maj_loc', censoring_dist_loc)
+
 		self.censoring_dist_min = self.gen_distribution(self.censoring_dist_min,
-																									  scale=censoring_dist_min_scale)
+																									  scale=censoring_dist_min_scale,
+																										loc=censoring_dist_min_loc)
 		self.censoring_dist_maj = self.gen_distribution(self.censoring_dist_maj,
-																										scale=censoring_dist_maj_scale)
+																										scale=censoring_dist_maj_scale,
+																										loc=censoring_dist_maj_loc)
 
 	def gen_distribution(self, distribution, **kwargs):
 		"""Helper function to set a distribution."""
@@ -118,6 +124,9 @@ class CensoredSurvivalData:
 		sample = self.sample(n)
 		
 		from matplotlib import pyplot as plt
+		import matplotlib as mpl
+
+		colors = {'majority': 'purple', 'minority': 'C2'}
 		
 		x = np.linspace(0, 10, 1000)	
 
@@ -126,14 +135,17 @@ class CensoredSurvivalData:
 
 		plt.subplot(3, 2, 1)
 		plt.hist(sample.true_event_time[~sample.is_minority],
-						 bins=20, alpha=0.25, density=True)
-		plt.plot(sorted(sample.true_event_time), 
-						 self.event_dist_maj.pdf(sorted(sample.true_event_time)), lw=2, color='C0' )
-	
+						 bins=20, alpha=0.25, density=True, color='C0')
+		plt.hist(sample.true_event_time[sample.is_minority],
+						 bins=20, alpha=0.25, density=True, color='C1')
+		plt.plot(x, self.event_dist_maj.pdf(x),
+						 lw=2, color='C0', label='Majority')
+		plt.plot(x, self.event_dist_min.pdf(x),
+						 lw=2, color='C1', label='Minority')
 		plt.title("True Time-to-Event (pdf)", fontsize=18)
 		plt.xlabel("Time in Years", fontsize=16)
 		plt.ylabel("Event Probability", fontsize=16)
-		plt.legend(loc='best', frameon=False)
+		plt.legend(loc='best')
 
 		plt.xlim(0, 10)
 		plt.ylim(0, None)
@@ -143,13 +155,17 @@ class CensoredSurvivalData:
 
 		plt.subplot(3, 2, 2)
 		plt.hist(sample.true_event_time[~sample.is_minority],
-						 bins=20, alpha=0.25, density=True, cumulative=True)
-		plt.plot(x, self.event_dist_maj.sf(x), lw=2, color='C0')
-
+						 bins=20, alpha=0.25, density=True, cumulative=True, color='C0')
+		plt.hist(sample.true_event_time[sample.is_minority],
+						 bins=20, alpha=0.25, density=True, cumulative=True, color='C1')
+		plt.plot(x, self.event_dist_maj.sf(x),
+						 lw=2, color='C0', label='Majority')
+		plt.plot(x, self.event_dist_min.sf(x),
+						 lw=2, color='C1', label='Minority')
 		plt.title("True Time-to-Event (sf)", fontsize=18)
 		plt.xlabel("Time in Years", fontsize=16)
 		plt.ylabel("Event Survival Probability", fontsize=16)
-		plt.legend(loc='best', frameon=False)
+		plt.legend(loc='best')
 
 		plt.xlim(0, 10)
 		plt.ylim(0, None)
@@ -158,13 +174,17 @@ class CensoredSurvivalData:
 		plt.subplot(3, 2, 3)
 		
 		plt.hist(sample.true_censoring_time[~sample.is_minority],
-						 bins=20, alpha=0.25, density=True)
-		plt.plot(x,  self.censoring_dist_maj.pdf(x), lw=2, color='C0')
-
+						 bins=20, alpha=0.25, density=True, color='C0')
+		plt.hist(sample.true_censoring_time[sample.is_minority],
+						 bins=20, alpha=0.25, density=True, color='C1')
+		plt.plot(x, self.censoring_dist_maj.pdf(x),
+						 lw=2, color='C0', label='Majority')
+		plt.plot(x, self.censoring_dist_min.pdf(x),
+						 lw=2, color='C1', label='Minority')
 		plt.title("True Censoring Event (pdf)", fontsize=18)
 		plt.xlabel("Time in Years", fontsize=16)
 		plt.ylabel("Censoring Probability", fontsize=16)
-		plt.legend(loc='best', frameon=False)
+		plt.legend(loc='best')
 
 		plt.xlim(0, 10)
 		plt.ylim(0, None)
@@ -173,13 +193,17 @@ class CensoredSurvivalData:
 		plt.subplot(3, 2, 4)
 		
 		plt.hist(sample.true_censoring_time[~sample.is_minority],
-						 bins=20, alpha=0.25, density=True, cumulative=True)
-		plt.plot(x,  self.censoring_dist_maj.sf(x), lw=2, color='C0')
-
+						 bins=20, alpha=0.25, density=True, cumulative=True, color='C0')
+		plt.hist(sample.true_censoring_time[sample.is_minority],
+						 bins=20, alpha=0.25, density=True, cumulative=True, color='C1')
+		plt.plot(x, self.censoring_dist_maj.sf(x),
+						 lw=2, color='C0', label='Majority')
+		plt.plot(x, self.censoring_dist_min.sf(x),
+						 lw=2, color='C1', label='Minority')
 		plt.title("True Censoring Event (sf)", fontsize=18)
 		plt.xlabel("Time in Years", fontsize=16)
 		plt.ylabel("Censoring Probability", fontsize=16)
-		plt.legend(loc='best', frameon=False)
+		plt.legend(loc='best')
 
 		plt.xlim(0, 10)
 		plt.ylim(0, None)
@@ -189,8 +213,12 @@ class CensoredSurvivalData:
 
 		plt.subplot(3, 2, 5)
 		plt.title("Kaplan-Meier Survival Estimate", fontsize=18)
-		KaplanMeierFitter().fit(sample.censored_survival_time,
-													  sample.censoring_indicator).plot()
+		KaplanMeierFitter().fit(sample.censored_survival_time[~sample.is_minority],
+													  sample.censoring_indicator[~sample.is_minority]).plot(color='C0', 
+																																								  label='Majority')
+		KaplanMeierFitter().fit(sample.censored_survival_time[sample.is_minority],
+														sample.censoring_indicator[sample.is_minority]).plot(color='C1',
+																																								 label='Minority')
 		plt.xlabel("Time in Years", fontsize=16)
 		plt.ylim(0, None)
 		plt.xlim(0, 10)
@@ -198,8 +226,12 @@ class CensoredSurvivalData:
 
 		plt.subplot(3, 2, 6)
 		plt.title("Nelson-Aalen Hazard Estimate", fontsize=18)
-		KaplanMeierFitter().fit(sample.censored_survival_time,
-													  sample.censoring_indicator).plot()
+		NelsonAalenFitter().fit(sample.censored_survival_time[~sample.is_minority],
+													  sample.censoring_indicator[~sample.is_minority]).plot(color='C0',
+																																									label='Majority')
+		NelsonAalenFitter().fit(sample.censored_survival_time[sample.is_minority],
+													  sample.censoring_indicator[sample.is_minority]).plot(color='C1',
+																																								 label='Minority')
 		plt.xlabel("Time in Years", fontsize=16)
 		plt.ylim(0, None)
 		plt.xlim(0, 10)
